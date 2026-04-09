@@ -1,30 +1,48 @@
 import { useEffect, useRef, useState } from 'react'
+import { useParams } from '@tanstack/react-router'
 import DashboardLayout from '../layouts/DashboardLayout'
 
-const questions = [
-  {
-    id: 1,
-    text: 'Which of the following indicators is used to measure market volatility?',
-    options: [
-      'Relative Strength Index (RSI)',
-      'Moving Average Convergence Divergence (MACD)',
-      'Bollinger Bands',
-      'Fibonacci Retracement',
-    ],
-  },
-  {
-    id: 2,
-    text: 'What does GDP stand for?',
-    options: [
-      'Gross Domestic Product',
-      'General Domestic Production',
-      'Global Development Plan',
-      'Gross Development Potential',
-    ],
-  },
-]
+type Question = {
+  id: number
+  text: string
+  type: 'radio' | 'checkbox'
+  options: string[]
+}
 
-const TOTAL_SECONDS = 20 * 60 + 31
+const examData: Record<string, { totalSeconds: number; questions: Question[] }> = {
+  '1': {
+    totalSeconds: 20 * 60 + 31,
+    questions: [
+      {
+        id: 1,
+        text: 'Which of the following indicators is used to measure market volatility?',
+        type: 'radio',
+        options: [
+          'Relative Strength Index (RSI)',
+          'Moving Average Convergence Divergence (MACD)',
+          'Bollinger Bands',
+          'Fibonacci Retracement',
+        ],
+      },
+    ],
+  },
+  '2': {
+    totalSeconds: 20 * 60 + 31,
+    questions: [
+      {
+        id: 1,
+        text: 'Which of the following indicators is used to measure market volatility?',
+        type: 'checkbox',
+        options: [
+          'Relative Strength Index (RSI)',
+          'Moving Average Convergence Divergence (MACD)',
+          'Bollinger Bands',
+          'Fibonacci Retracement',
+        ],
+      },
+    ],
+  },
+}
 
 function formatTime(s: number) {
   const m = Math.floor(s / 60)
@@ -33,9 +51,13 @@ function formatTime(s: number) {
 }
 
 export default function ExamTestPage() {
+  const { id } = useParams({ strict: false }) as { id: string }
+  const exam = examData[id] ?? examData['1']
+
   const [current, setCurrent] = useState(0)
-  const [selected, setSelected] = useState<Record<number, string>>({})
-  const [timeLeft, setTimeLeft] = useState(TOTAL_SECONDS)
+  const [radioSelected, setRadioSelected] = useState<Record<number, string>>({})
+  const [checkboxSelected, setCheckboxSelected] = useState<Record<number, string[]>>({})
+  const [timeLeft, setTimeLeft] = useState(exam.totalSeconds)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
@@ -45,8 +67,23 @@ export default function ExamTestPage() {
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [])
 
-  const question = questions[current]
-  const total = questions.length
+  const question = exam.questions[current]
+  const total = exam.questions.length
+
+  const toggleCheckbox = (qId: number, option: string) => {
+    setCheckboxSelected(prev => {
+      const curr = prev[qId] ?? []
+      return {
+        ...prev,
+        [qId]: curr.includes(option)
+          ? curr.filter(o => o !== option)
+          : [...curr, option],
+      }
+    })
+  }
+
+  const isChecked = (option: string) =>
+    (checkboxSelected[question.id] ?? []).includes(option)
 
   const handleSave = () => {
     if (current < total - 1) setCurrent(c => c + 1)
@@ -59,7 +96,7 @@ export default function ExamTestPage() {
   return (
     <DashboardLayout>
       <div className="flex-1 flex flex-col items-center px-4 py-10 gap-5">
-        {/* Progress + Timer bar */}
+        {/* Progress + Timer */}
         <div className="w-full max-w-3xl bg-white border border-gray-200 rounded-xl px-6 py-4 flex items-center justify-between">
           <span className="text-base font-semibold text-gray-700">
             Question ({current + 1}/{total})
@@ -78,22 +115,45 @@ export default function ExamTestPage() {
           {/* Options */}
           <div className="flex flex-col gap-3">
             {question.options.map(option => {
-              const isSelected = selected[question.id] === option
+              const isRadioSelected = radioSelected[question.id] === option
+              const isCheckboxChecked = isChecked(option)
+              const isSelected = question.type === 'radio' ? isRadioSelected : isCheckboxChecked
+
               return (
                 <button
                   key={option}
-                  onClick={() => setSelected(s => ({ ...s, [question.id]: option }))}
+                  onClick={() => {
+                    if (question.type === 'radio') {
+                      setRadioSelected(s => ({ ...s, [question.id]: option }))
+                    } else {
+                      toggleCheckbox(question.id, option)
+                    }
+                  }}
                   className={`flex items-center gap-3 border rounded-xl px-4 py-3.5 text-sm text-gray-700 text-left transition
                     ${isSelected
                       ? 'border-violet-500 bg-violet-50'
                       : 'border-gray-200 hover:border-violet-300 hover:bg-violet-50/40'
                     }`}
                 >
-                  <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition
-                    ${isSelected ? 'border-violet-600' : 'border-gray-300'}`}
-                  >
-                    {isSelected && <span className="w-2.5 h-2.5 rounded-full bg-violet-600" />}
-                  </span>
+                  {question.type === 'radio' ? (
+                    /* Radio circle */
+                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition
+                      ${isSelected ? 'border-violet-600' : 'border-gray-300'}`}
+                    >
+                      {isSelected && <span className="w-2.5 h-2.5 rounded-full bg-violet-600" />}
+                    </span>
+                  ) : (
+                    /* Checkbox square */
+                    <span className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition
+                      ${isSelected ? 'border-violet-600 bg-violet-600' : 'border-gray-300 bg-white'}`}
+                    >
+                      {isSelected && (
+                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </span>
+                  )}
                   {option}
                 </button>
               )
