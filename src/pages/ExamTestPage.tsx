@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import DashboardLayout from '../layouts/DashboardLayout'
 import RichTextEditor from '../components/RichTextEditor'
+import TimeoutModal from '../components/TimeoutModal'
 
 type Question = {
   id: number
@@ -61,45 +62,6 @@ function formatTime(s: number) {
   return `${m}:${String(sec).padStart(2, '0')} left`
 }
 
-function TimeoutModal({ onDashboard }: { onDashboard: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" />
-
-      {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-xl px-12 py-12 flex flex-col items-center gap-4 text-center max-w-lg w-full mx-4">
-        {/* Icon: clock + red X badge */}
-        <div className="relative w-16 h-16">
-          <svg viewBox="0 0 64 64" fill="none" className="w-full h-full">
-            <circle cx="28" cy="28" r="24" fill="#E2E8F0" stroke="#94A3B8" strokeWidth="3" />
-            <circle cx="28" cy="28" r="20" fill="white" />
-            <path d="M28 14v14l8 5" stroke="#475569" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          {/* Red X badge */}
-          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </div>
-        </div>
-
-        <h2 className="text-xl font-bold text-gray-800">Timeout!</h2>
-
-        <p className="text-gray-500 text-sm">
-          Dear Md. Naimur Rahman, Your exam time has been finished. Thank you for participating.
-        </p>
-
-        <button
-          onClick={onDashboard}
-          className="mt-2 border border-gray-300 text-gray-700 font-semibold text-sm px-7 py-2.5 rounded-xl hover:bg-gray-50 transition"
-        >
-          Back to Dashboard
-        </button>
-      </div>
-    </div>
-  )
-}
 
 export default function ExamTestPage() {
   const { id } = useParams({ strict: false }) as { id: string }

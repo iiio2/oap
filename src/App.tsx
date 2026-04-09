@@ -3,6 +3,7 @@ import SignInPage from './pages/SignInPage'
 import DashboardPage from './pages/DashboardPage'
 import ExamTestPage from './pages/ExamTestPage'
 import CompletePage from './pages/CompletePage'
+import TimeoutPage from './pages/TimeoutPage'
 
 const rootRoute = createRootRoute()
 
@@ -30,7 +31,13 @@ const completeRoute = createRoute({
   component: CompletePage,
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, dashboardRoute, examTestRoute, completeRoute])
+const timeoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/timeout',
+  component: TimeoutPage,
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, dashboardRoute, examTestRoute, completeRoute, timeoutRoute])
 
 const router = createRouter({ routeTree })
 
