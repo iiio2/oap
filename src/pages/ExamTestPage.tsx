@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from '@tanstack/react-router'
 import DashboardLayout from '../layouts/DashboardLayout'
+import RichTextEditor from '../components/RichTextEditor'
 
 type Question = {
   id: number
   text: string
-  type: 'radio' | 'checkbox'
-  options: string[]
+  type: 'radio' | 'checkbox' | 'text'
+  options?: string[]
 }
 
 const examData: Record<string, { totalSeconds: number; questions: Question[] }> = {
@@ -39,6 +40,16 @@ const examData: Record<string, { totalSeconds: number; questions: Question[] }> 
           'Bollinger Bands',
           'Fibonacci Retracement',
         ],
+      },
+    ],
+  },
+  '3': {
+    totalSeconds: 20 * 60 + 31,
+    questions: [
+      {
+        id: 1,
+        text: 'Which of the following indicators is used to measure market volatility?',
+        type: 'text',
       },
     ],
   },
@@ -75,23 +86,13 @@ export default function ExamTestPage() {
       const curr = prev[qId] ?? []
       return {
         ...prev,
-        [qId]: curr.includes(option)
-          ? curr.filter(o => o !== option)
-          : [...curr, option],
+        [qId]: curr.includes(option) ? curr.filter(o => o !== option) : [...curr, option],
       }
     })
   }
 
-  const isChecked = (option: string) =>
-    (checkboxSelected[question.id] ?? []).includes(option)
-
-  const handleSave = () => {
-    if (current < total - 1) setCurrent(c => c + 1)
-  }
-
-  const handleSkip = () => {
-    if (current < total - 1) setCurrent(c => c + 1)
-  }
+  const handleSave = () => { if (current < total - 1) setCurrent(c => c + 1) }
+  const handleSkip = () => { if (current < total - 1) setCurrent(c => c + 1) }
 
   return (
     <DashboardLayout>
@@ -112,53 +113,58 @@ export default function ExamTestPage() {
             Q{current + 1}. {question.text}
           </p>
 
-          {/* Options */}
-          <div className="flex flex-col gap-3">
-            {question.options.map(option => {
-              const isRadioSelected = radioSelected[question.id] === option
-              const isCheckboxChecked = isChecked(option)
-              const isSelected = question.type === 'radio' ? isRadioSelected : isCheckboxChecked
-
-              return (
-                <button
-                  key={option}
-                  onClick={() => {
-                    if (question.type === 'radio') {
-                      setRadioSelected(s => ({ ...s, [question.id]: option }))
-                    } else {
-                      toggleCheckbox(question.id, option)
-                    }
-                  }}
-                  className={`flex items-center gap-3 border rounded-xl px-4 py-3.5 text-sm text-gray-700 text-left transition
-                    ${isSelected
-                      ? 'border-violet-500 bg-violet-50'
-                      : 'border-gray-200 hover:border-violet-300 hover:bg-violet-50/40'
-                    }`}
-                >
-                  {question.type === 'radio' ? (
-                    /* Radio circle */
+          {/* Radio options */}
+          {question.type === 'radio' && (
+            <div className="flex flex-col gap-3">
+              {question.options!.map(option => {
+                const isSelected = radioSelected[question.id] === option
+                return (
+                  <button
+                    key={option}
+                    onClick={() => setRadioSelected(s => ({ ...s, [question.id]: option }))}
+                    className={`flex items-center gap-3 border rounded-xl px-4 py-3.5 text-sm text-gray-700 text-left transition
+                      ${isSelected ? 'border-violet-500 bg-violet-50' : 'border-gray-200 hover:border-violet-300 hover:bg-violet-50/40'}`}
+                  >
                     <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition
-                      ${isSelected ? 'border-violet-600' : 'border-gray-300'}`}
-                    >
+                      ${isSelected ? 'border-violet-600' : 'border-gray-300'}`}>
                       {isSelected && <span className="w-2.5 h-2.5 rounded-full bg-violet-600" />}
                     </span>
-                  ) : (
-                    /* Checkbox square */
+                    {option}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Checkbox options */}
+          {question.type === 'checkbox' && (
+            <div className="flex flex-col gap-3">
+              {question.options!.map(option => {
+                const isSelected = (checkboxSelected[question.id] ?? []).includes(option)
+                return (
+                  <button
+                    key={option}
+                    onClick={() => toggleCheckbox(question.id, option)}
+                    className={`flex items-center gap-3 border rounded-xl px-4 py-3.5 text-sm text-gray-700 text-left transition
+                      ${isSelected ? 'border-violet-500 bg-violet-50' : 'border-gray-200 hover:border-violet-300 hover:bg-violet-50/40'}`}
+                  >
                     <span className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition
-                      ${isSelected ? 'border-violet-600 bg-violet-600' : 'border-gray-300 bg-white'}`}
-                    >
+                      ${isSelected ? 'border-violet-600 bg-violet-600' : 'border-gray-300 bg-white'}`}>
                       {isSelected && (
                         <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </span>
-                  )}
-                  {option}
-                </button>
-              )
-            })}
-          </div>
+                    {option}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Rich text editor */}
+          {question.type === 'text' && <RichTextEditor />}
 
           {/* Actions */}
           <div className="flex items-center justify-between pt-2">
