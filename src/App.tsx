@@ -2,6 +2,7 @@ import { createRouter, createRoute, createRootRoute, RouterProvider } from '@tan
 import SignInPage from './pages/SignInPage'
 import DashboardPage from './pages/DashboardPage'
 import ExamTestPage from './pages/ExamTestPage'
+import CompletePage from './pages/CompletePage'
 
 const rootRoute = createRootRoute()
 
@@ -23,7 +24,13 @@ const examTestRoute = createRoute({
   component: ExamTestPage,
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, dashboardRoute, examTestRoute])
+const completeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/complete',
+  component: CompletePage,
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, dashboardRoute, examTestRoute, completeRoute])
 
 const router = createRouter({ routeTree })
 
