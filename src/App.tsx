@@ -1,6 +1,7 @@
 import { createRouter, createRoute, createRootRoute, RouterProvider } from '@tanstack/react-router'
 import SignInPage from './pages/SignInPage'
 import DashboardPage from './pages/DashboardPage'
+import ExamTestPage from './pages/ExamTestPage'
 
 const rootRoute = createRootRoute()
 
@@ -16,7 +17,13 @@ const dashboardRoute = createRoute({
   component: DashboardPage,
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, dashboardRoute])
+const examTestRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/exam-test/$id',
+  component: ExamTestPage,
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, dashboardRoute, examTestRoute])
 
 const router = createRouter({ routeTree })
 
