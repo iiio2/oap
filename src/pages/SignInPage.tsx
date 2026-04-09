@@ -1,13 +1,19 @@
 import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod/v4'
 import MainLayout from '../layouts/MainLayout'
 
-type SignInForm = {
-  email: string
-  password: string
-}
+const signInSchema = z.object({
+  email: z.email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+})
+
+type SignInForm = z.infer<typeof signInSchema>
 
 export default function SignInPage() {
-  const { register, handleSubmit } = useForm<SignInForm>()
+  const { register, handleSubmit, formState: { errors } } = useForm<SignInForm>({
+    resolver: zodResolver(signInSchema),
+  })
 
   const onSubmit = (data: SignInForm) => {
     console.log(data)
@@ -27,8 +33,15 @@ export default function SignInPage() {
                 type="email"
                 placeholder="Your primary email address"
                 {...register('email')}
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100 transition"
+                className={`w-full border rounded-lg px-4 py-3 text-sm text-gray-700 placeholder-gray-400 outline-none focus:ring-2 transition
+                  ${errors.email
+                    ? 'border-red-400 focus:border-red-400 focus:ring-red-100'
+                    : 'border-gray-200 focus:border-violet-500 focus:ring-violet-100'
+                  }`}
               />
+              {errors.email && (
+                <span className="text-xs text-red-500">{errors.email.message}</span>
+              )}
             </div>
 
             {/* Password */}
@@ -38,8 +51,15 @@ export default function SignInPage() {
                 type="password"
                 placeholder="Enter your password"
                 {...register('password')}
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100 transition"
+                className={`w-full border rounded-lg px-4 py-3 text-sm text-gray-700 placeholder-gray-400 outline-none focus:ring-2 transition
+                  ${errors.password
+                    ? 'border-red-400 focus:border-red-400 focus:ring-red-100'
+                    : 'border-gray-200 focus:border-violet-500 focus:ring-violet-100'
+                  }`}
               />
+              {errors.password && (
+                <span className="text-xs text-red-500">{errors.password.message}</span>
+              )}
               <div className="flex justify-end mt-0.5">
                 <a href="#" className="text-sm text-gray-600 hover:text-violet-600 transition">
                   Forget Password?

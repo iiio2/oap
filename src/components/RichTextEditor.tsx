@@ -124,7 +124,7 @@ function AlignIcon() {
 }
 
 // --- History stack ---
-export default function RichTextEditor() {
+export default function RichTextEditor({ onChange }: { onChange?: (val: string) => void }) {
   const editorRef = useRef<HTMLDivElement>(null)
   const historyRef = useRef<string[]>([''])
   const historyIndexRef = useRef(0)
@@ -135,9 +135,9 @@ export default function RichTextEditor() {
 
   const saveHistory = () => {
     const html = editorRef.current?.innerHTML ?? ''
+    onChange?.(editorRef.current?.innerText?.trim() ?? '')
     const stack = historyRef.current
     const idx = historyIndexRef.current
-    // Drop any redo history ahead
     historyRef.current = [...stack.slice(0, idx + 1), html]
     historyIndexRef.current = historyRef.current.length - 1
   }

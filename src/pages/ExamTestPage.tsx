@@ -1,8 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
+import { z } from 'zod/v4'
 import DashboardLayout from '../layouts/DashboardLayout'
 import RichTextEditor from '../components/RichTextEditor'
 import TimeoutModal from '../components/TimeoutModal'
+
+const radioSchema = z.object({ answer: z.string().min(1, 'Please select an option') })
+const checkboxSchema = z.object({ answers: z.string().array().min(1, 'Please select at least one option') })
+const textSchema = z.object({ answer: z.string().min(1, 'Please write your answer') })
 
 type Question = {
   id: number
@@ -71,6 +76,8 @@ export default function ExamTestPage() {
   const [current, setCurrent] = useState(0)
   const [radioSelected, setRadioSelected] = useState<Record<number, string>>({})
   const [checkboxSelected, setCheckboxSelected] = useState<Record<number, string[]>>({})
+  const [textAnswers, setTextAnswers] = useState<Record<number, string>>({})
+  const [validationError, setValidationError] = useState<string | null>(null)
   const [timeLeft, setTimeLeft] = useState(exam.totalSeconds)
   const [timedOut, setTimedOut] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -102,8 +109,30 @@ export default function ExamTestPage() {
     })
   }
 
-  const handleSave = () => { if (current < total - 1) setCurrent(c => c + 1) }
-  const handleSkip = () => { if (current < total - 1) setCurrent(c => c + 1) }
+  const handleSave = () => {
+    setValidationError(null)
+    let result
+
+    if (question.type === 'radio') {
+      result = radioSchema.safeParse({ answer: radioSelected[question.id] ?? '' })
+    } else if (question.type === 'checkbox') {
+      result = checkboxSchema.safeParse({ answers: checkboxSelected[question.id] ?? [] })
+    } else {
+      result = textSchema.safeParse({ answer: textAnswers[question.id] ?? '' })
+    }
+
+    if (!result.success) {
+      setValidationError(result.error.issues[0].message)
+      return
+    }
+
+    if (current < total - 1) setCurrent(c => c + 1)
+  }
+
+  const handleSkip = () => {
+    setValidationError(null)
+    if (current < total - 1) setCurrent(c => c + 1)
+  }
 
   return (
     <DashboardLayout>
@@ -134,7 +163,7 @@ export default function ExamTestPage() {
                 return (
                   <button
                     key={option}
-                    onClick={() => setRadioSelected(s => ({ ...s, [question.id]: option }))}
+                    onClick={() => { setRadioSelected(s => ({ ...s, [question.id]: option })); setValidationError(null) }}
                     className={`flex items-center gap-3 border rounded-xl px-4 py-3.5 text-sm text-gray-700 text-left transition
                       ${isSelected ? 'border-violet-500 bg-violet-50' : 'border-gray-200 hover:border-violet-300 hover:bg-violet-50/40'}`}
                   >
@@ -157,7 +186,7 @@ export default function ExamTestPage() {
                 return (
                   <button
                     key={option}
-                    onClick={() => toggleCheckbox(question.id, option)}
+                    onClick={() => { toggleCheckbox(question.id, option); setValidationError(null) }}
                     className={`flex items-center gap-3 border rounded-xl px-4 py-3.5 text-sm text-gray-700 text-left transition
                       ${isSelected ? 'border-violet-500 bg-violet-50' : 'border-gray-200 hover:border-violet-300 hover:bg-violet-50/40'}`}
                   >
@@ -177,7 +206,16 @@ export default function ExamTestPage() {
           )}
 
           {/* Rich text editor */}
-          {question.type === 'text' && <RichTextEditor />}
+          {question.type === 'text' && (
+            <RichTextEditor
+              onChange={val => { setTextAnswers(p => ({ ...p, [question.id]: val })); if (val) setValidationError(null) }}
+            />
+          )}
+
+          {/* Validation error */}
+          {validationError && (
+            <p className="text-xs text-red-500">{validationError}</p>
+          )}
 
           {/* Actions */}
           <div className="flex items-center justify-between pt-2">
